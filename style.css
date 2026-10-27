@@ -112,3 +112,12 @@ input,textarea{border-radius:16px}
 .onl{position:relative;cursor:pointer;width:fit-content}
 #onlpop{position:absolute;top:28px;left:2px;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--sh);padding:8px 12px;font-size:12px;z-index:6;min-width:140px}
 #onlpop[hidden]{display:none}#onlpop div{padding:3px 0}
+
+/* ---------- ID + badges ---------- */
+.whorow{display:flex;align-items:center;gap:5px;justify-content:center}
+#idrow{display:flex;align-items:center;gap:8px;justify-content:center;margin:6px 0 14px;color:var(--t2);font-size:12px}
+#idrow .ghost{padding:5px 12px;font-size:12px}
+.bverify svg{width:16px;height:16px;vertical-align:-3px}
+.bstaff{width:16px;height:16px;border-radius:4px;vertical-align:-3px;object-fit:contain}
+.nm{display:flex;align-items:center;gap:4px}
+#bres{font-size:12px;color:var(--t2);margin-top:4px}

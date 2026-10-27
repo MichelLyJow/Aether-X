@@ -21,6 +21,7 @@
 <section id="v-dev" class="view"><div class="hero"><h2>Developer Panel</h2><p>Only visible to you.</p></div>
 <div class="card stats"><div><b id="sOn">0</b>online</div><div><b id="sLd">0</b>loaders</div></div>
 <div class="card"><label>Discord link</label><input id="dcin" placeholder="https://discord.gg/…"><button id="dcsave" class="grad wide">Save link</button></div>
+<div class="card"><label>Grant badges</label><input id="bid" placeholder="User AX ID (e.g. 482913)"><div class="two"><button id="bverif" class="ghost">Toggle verified</button><button id="bstaff" class="ghost">Toggle staff</button></div><p id="bres"></p></div>
 <div class="card"><label>Announcement (pinned in chat)</label><input id="anin" maxlength="200" placeholder="Leave empty to hide"><button id="ansave" class="grad wide">Publish</button></div>
 <div class="card"><label>Main Script Loader (/loader)</label><textarea id="mcode" rows="9" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 <div class="two"><button id="msave" class="grad">Save</button><button id="mcopy" class="ghost">Copy loadstring</button></div></div>
@@ -28,7 +29,7 @@
 </main>
 <nav class="pill" id="nav"><button data-v="chat" class="on"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Chat</span></button>
 <button data-v="loader"><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg><span>Loader</span></button></nav>
-<div id="modal" hidden><div class="backdrop"></div><div class="card"><button id="mhandle" aria-label="Close"></button><div id="mout" hidden><div class="me"><div class="av pav" id="pav"></div><small>Tap photo to change</small><b id="who"></b></div><input id="dnin" maxlength="24" placeholder="Display name"><button id="dnsave" class="ghost wide">Save name</button>
+<div id="modal" hidden><div class="backdrop"></div><div class="card"><button id="mhandle" aria-label="Close"></button><div id="mout" hidden><div class="me"><div class="av pav" id="pav"></div><small>Tap photo to change</small><div class="whorow"><b id="who"></b><span id="whobadges"></span></div><div id="idrow"><span id="myid"></span><button id="idcopy" class="ghost">Copy ID</button></div></div><input id="dnin" maxlength="24" placeholder="Display name"><button id="dnsave" class="ghost wide">Save name</button>
 <button id="devbtn" class="grad wide" hidden>Developer panel</button><button id="logout" class="ghost wide">Log out</button></div>
 <div id="min"><h3>Welcome to Aether X</h3><input id="au" placeholder="Username" autocapitalize="off" autocorrect="off"><input id="ap" type="password" placeholder="Password (min 6)">
 <div class="two"><button id="login" class="grad">Log in</button><button id="reg" class="ghost">Sign up</button></div></div><div class="sw" id="sw"></div>

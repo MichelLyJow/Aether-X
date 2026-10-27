@@ -23,9 +23,15 @@ const IC={copy:'<path d="M9 9h10v10H9zM5 15V5h10"/>',reply:'<path d="M9 7L4 12l5
 const svg=n=>'<svg viewBox="0 0 24 24">'+IC[n]+'</svg>';
 const ib=(n,f,extra)=>{const b=h('button',extra||'');b.innerHTML=svg(n);b.onclick=f;return b};
 const fico=()=>{const s=h('span');s.innerHTML=svg('file');return s};
+const VERIFY='<path d="M12 2l2.4 1.4 2.8-.4 1.1 2.6 2.6 1.1-.4 2.8L22 12l-1.4 2.4.4 2.8-2.6 1.1-1.1 2.6-2.8-.4L12 22l-2.4-1.4-2.8.4-1.1-2.6-2.6-1.1.4-2.8L2 12l1.4-2.4-.4-2.8 2.6-1.1 1.1-2.6 2.8.4z"/><path d="M8.5 12.2l2.3 2.3 4.5-4.8" fill="none" stroke="#fff" stroke-width="1.8"/>';
+function badges(uid,isDev){const f=document.createDocumentFragment();
+ const bd=isDev?{verified:true,staff:true}:(getU(uid).badges||{});
+ if(bd.verified){const s=h('span','bverify');s.innerHTML='<svg viewBox="0 0 24 24" fill="#2F6FED">'+VERIFY+'</svg>';s.title='Verified';f.append(s)}
+ if(bd.staff){const im=h('img','bstaff');im.src='/logo.png';im.title='Developer / Moderator';im.onerror=()=>im.remove();f.append(im)}
+ return f}
 
 /* ---------- accent colors ---------- */
-const ACC=[['#18181B','#52525B'],['#2F6FED','#49C7E8'],['#7C3AED','#C084FC'],['#059669','#34D399'],['#EA580C','#FBBF24'],['#DB2777','#F472B6']];
+const ACC=[['#18181B','#2F6FED'],['#2F6FED','#49C7E8'],['#7C3AED','#C084FC'],['#059669','#34D399'],['#EA580C','#FBBF24'],['#DB2777','#F472B6']];
 function setAcc(i){const[a,b]=ACC[i],r=document.documentElement.style;r.setProperty('--a',a);r.setProperty('--g','linear-gradient(135deg,'+a+','+b+')');document.querySelectorAll('#sw button').forEach((e,j)=>e.classList.toggle('on',j===i));try{localStorage.setItem('ax-acc',i)}catch(e){}}
 ACC.forEach((c,i)=>{const b=h('button');b.style.background='linear-gradient(135deg,'+c[0]+','+c[1]+')';b.onclick=()=>setAcc(i);$('#sw').append(b)});
 try{const v=localStorage.getItem('ax-acc');setAcc(v===null?0:+v)}catch(e){setAcc(0)}
@@ -53,7 +59,10 @@ function go(v){if(v==='dev'&&!isDeveloper())v='chat';view=v;document.querySelect
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 
 /* ---------- auth + profile ---------- */
-function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,uname);$('#dnin').value=getU(me.uid).displayName||uname}
+function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,uname);$('#dnin').value=getU(me.uid).displayName||uname;
+ $('#whobadges').innerHTML='';$('#whobadges').append(badges(me.uid,isDeveloper()));
+ const id=getU(me.uid).axid;$('#myid').textContent=id?'ID: '+id:'ID: —'}
+$('#idcopy').onclick=()=>{const id=getU(me.uid).axid;if(id)copy(id);else toast('No ID yet')};
 const openAuth=()=>{$('#mout').hidden=!me;$('#min').hidden=!!me;$('#devbtn').hidden=!isDeveloper();if(me)fillMe();$('#modal').hidden=false};
 $('#acc').onclick=openAuth;
 const closeModal=()=>$('#modal').hidden=true;
@@ -68,7 +77,9 @@ async function cred(reg){const u=$('#au').value.trim(),p=$('#ap').value;
  if(!/^[a-zA-Z0-9_]{3,20}$/.test(u))return toast('Username: 3-20 letters, numbers or _');if(p.length<6)return toast('Password must be 6+ characters');
  const k=u.toLowerCase(),email=k+'@aetherx.local';
  try{if(reg){if((await db.ref('usernames/'+k).get()).exists())return toast('Username already taken');
-  const c=await auth.createUserWithEmailAndPassword(email,p);await db.ref('usernames/'+k).set(c.user.uid);await db.ref('users/'+c.user.uid).set({username:u})}
+  const c=await auth.createUserWithEmailAndPassword(email,p);await db.ref('usernames/'+k).set(c.user.uid);
+  let id,tries=0;do{id=String(Math.floor(100000+Math.random()*900000));tries++}while(tries<8&&(await db.ref('axids/'+id).get()).exists());
+  await db.ref('axids/'+id).set(c.user.uid);await db.ref('users/'+c.user.uid).set({username:u,axid:id})}
  else await auth.signInWithEmailAndPassword(email,p);
  $('#modal').hidden=true;$('#ap').value=''}catch(e){toast(e.code==='auth/email-already-in-use'?'Username already taken':'Wrong username or password')}}
 $('#login').onclick=()=>cred(false);$('#reg').onclick=()=>cred(true);
@@ -110,7 +121,7 @@ function render(){const box=$('#msgs');stuck=box.scrollHeight-box.scrollTop-box.
   if(!mine){const av=h('div','av'+(first?'':' ghost'));paint(av,m.uid,m.name);row.append(av)}
   const t=(m.text||'').toLowerCase(),ment=me&&!mine&&uname&&(t.includes('@'+uname.toLowerCase())||t.includes('@'+dn(me.uid,uname).toLowerCase()));
   const b=h('div','bub'+(ment?' ment':''));
-  if(first&&!mine){const n=h('div','nm',dn(m.uid,m.name));n.style.color=col(m.name);if(m.uid===devUid)n.append(h('span','dtag','DEV'));b.append(n)}
+  if(first&&!mine){const n=h('div','nm',dn(m.uid,m.name));n.style.color=col(m.name);n.append(badges(m.uid,m.uid===devUid));if(m.uid===devUid)n.append(h('span','dtag','DEV'));b.append(n)}
   if(m.replyTo){const q=h('div','quote');q.append(h('b','',m.replyTo.name),h('span','',m.replyTo.text));
    q.onclick=()=>{const tgt=document.querySelector('[data-id="'+m.replyTo.id+'"]');if(!tgt)return toast('Original message is older');tgt.scrollIntoView({block:'center',behavior:'smooth'});tgt.classList.add('flash');setTimeout(()=>tgt.classList.remove('flash'),1400)};b.append(q)}
   media(m,b);if(m.text){const tx=h('div','tx');tx.append(lnk(m.text));b.append(tx)}
@@ -218,5 +229,11 @@ const dev=(f,ok)=>async()=>{if(!isDeveloper())return;try{await f();toast(ok)}cat
 $('#dcsave').onclick=dev(()=>db.ref('config/links/discord').set($('#dcin').value.trim()),'Saved');
 $('#ansave').onclick=dev(()=>db.ref('config/announcement').set($('#anin').value.trim()),'Published');
 $('#msave').onclick=dev(()=>db.ref('loaders/__main__').update({code:$('#mcode').value,updated:Date.now()}),'Saved');
+async function findUid(id){const s=await db.ref('axids/'+id.trim()).get();return s.exists()?s.val():null}
+async function toggleBadge(kind){if(!isDeveloper())return;const id=$('#bid').value.trim();if(!id)return toast('Enter an AX ID');
+ const uid=await findUid(id);if(!uid)return $('#bres').textContent='No user found with that ID';
+ const r=db.ref('users/'+uid+'/badges/'+kind);const cur=(await r.get()).val();await r.set(!cur);
+ const nm=(await db.ref('users/'+uid+'/username').get()).val()||uid;$('#bres').textContent=nm+' — '+kind+': '+(!cur?'ON':'off')}
+$('#bverif').onclick=()=>toggleBadge('verified');$('#bstaff').onclick=()=>toggleBadge('staff');
 $('#clear').onclick=()=>{if(isDeveloper()&&confirm('Delete all loaded messages?')){const u={};msgs.forEach(m=>{u['globalChat/'+m.id]=null;if(m.mid)u['media/'+m.mid]=null});db.ref().update(u).then(()=>toast('Chat cleared')).catch(()=>toast('Denied'))}};
 $('#mcopy').onclick=()=>copy(snip());
