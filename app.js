@@ -6,6 +6,8 @@ const isDeveloper=()=>isDev;
 const h=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const btn=(t,f,c)=>{const b=h('button',c||'',t);b.onclick=f;return b};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200)};
+window.addEventListener('error',e=>{try{toast('JS error: '+e.message+' (line '+e.lineno+')')}catch(x){}console.error('Aether X error:',e.error||e.message,e)});
+window.addEventListener('unhandledrejection',e=>{try{toast('Async error: '+(e.reason&&e.reason.message||e.reason))}catch(x){}console.error('Aether X promise error:',e.reason)});
 const copy=async t=>{try{await navigator.clipboard.writeText(t);toast('Copied')}catch(e){toast('Copy manually')}};
 const PAL=['#2F6FED','#D9480F','#2B8A3E','#9C36B5','#C2255C','#0B7285'];
 const col=n=>{let x=0;for(const c of String(n).toLowerCase())x=(x*31+c.charCodeAt(0))>>>0;return PAL[x%PAL.length]};
