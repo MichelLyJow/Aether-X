@@ -57,11 +57,11 @@ pre{background:#18181B;color:#E8E8EA;border-radius:12px;padding:12px;margin-top:
 #dc svg{fill:currentColor;stroke:none;width:22px;height:22px}#dc{color:#5865F2}
 #v-chat{position:relative}.item{flex-wrap:wrap}.tx a{color:inherit;text-decoration:underline;word-break:break-all}
 .thumb{height:36px;width:36px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px}
-#amenu{position:absolute;left:8px;bottom:64px;background:var(--card);border:1px solid var(--bd);border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:8px;width:240px;z-index:6}#amenu[hidden]{display:none}
+#amenu{position:fixed;left:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));background:var(--card);border:1px solid var(--bd);border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:8px;width:240px;z-index:7}#amenu[hidden]{display:none!important}
 #amenu>button{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:var(--tx);font-weight:600;padding:8px;border-radius:16px;cursor:pointer}#amenu>button:active{background:var(--bd)}
 #amenu i{font-style:normal;width:40px;height:40px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:19px}
 #egrid{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;padding-top:6px}#egrid[hidden]{display:none}#egrid button{border:0;background:none;font-size:22px;padding:4px;cursor:pointer}
-#down{position:absolute;right:14px;bottom:72px;width:40px;height:40px;border-radius:50%;border:0;background:var(--g);color:#fff;font-size:18px;box-shadow:var(--sh);cursor:pointer;z-index:4}#down[hidden]{display:none}
+#down{position:fixed;right:14px;bottom:calc(72px + env(safe-area-inset-bottom,0px));width:40px;height:40px;border-radius:50%;border:0;background:var(--g);color:#fff;font-size:18px;box-shadow:var(--sh);cursor:pointer;z-index:4}#down[hidden]{display:none!important}
 .brand b{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
 #splash{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 35%,#1D2433,#0A0B0E 70%);color:#fff;display:grid;place-items:center;transition:opacity .5s,visibility .5s}#splash.out{opacity:0;visibility:hidden}
 .sp{text-align:center;width:min(280px,80%)}.sp img{width:116px;height:116px;object-fit:contain;animation:pu 2s ease-in-out infinite;filter:drop-shadow(0 0 22px rgba(73,199,232,.45))}
@@ -124,19 +124,24 @@ input,textarea{border-radius:16px}
 
 /* ---------- stickers + loader output ---------- */
 #outact{margin-top:8px}
-#stkpanel{position:absolute;left:8px;right:8px;bottom:64px;background:var(--card);border:1px solid var(--bd);border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:12px;z-index:6;max-height:340px;display:flex;flex-direction:column}
-#stkpanel[hidden]{display:none}
+#stkpanel{position:fixed;left:8px;right:8px;max-width:544px;margin:0 auto;bottom:calc(74px + env(safe-area-inset-bottom,0px));background:var(--card);border:1px solid var(--bd);border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.3);padding:12px;z-index:7;max-height:min(340px,60vh);overflow-y:auto;display:flex;flex-direction:column}
+#stkpanel[hidden]{display:none!important}
 .stkhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .stkhead .seg{margin:0;flex:1;margin-right:10px}
 #stkAdd{width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff;border:0;font-size:18px;line-height:1;cursor:pointer}
 #stkGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow-y:auto}
 .sticktile{aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--bg);border:1px solid var(--bd);cursor:pointer;display:grid;place-items:center}
-.sticktile img{width:100%;height:100%;object-fit:contain}
+.sticktile img{width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain}
 #stkNew{background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:10px;margin-bottom:10px}
-#stkNew img{width:84px;height:84px;object-fit:contain;display:block;margin:0 auto 8px;background:var(--card);border-radius:12px}
+#stkNew img{width:84px!important;height:84px!important;max-width:84px!important;object-fit:contain;display:block;margin:0 auto 8px;background:var(--card);border-radius:12px}
 .stickerbub{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
 .mine .stickerbub{background:none!important}
 .mimg.stk-msg{max-width:140px;max-height:140px;min-width:0;min-height:0;background:none}
-#stkSaveMenu{position:absolute;z-index:11;background:#18181B;border-radius:12px;padding:4px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
-#stkSaveMenu[hidden]{display:none}
+#stkSaveMenu{position:fixed;z-index:11;background:#18181B;border-radius:12px;padding:4px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+#stkSaveMenu[hidden]{display:none!important}
 #stkSaveMenu button{background:none;border:0;color:#fff;font-size:13px;font-weight:600;padding:8px 14px;cursor:pointer;white-space:nowrap}
+
+/* ---------- photo loading/error state ---------- */
+.mimgwrap{position:relative;min-width:140px;min-height:90px;max-width:100%}
+.mimgload{min-width:140px;min-height:90px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--bd);border-radius:12px;color:var(--t2);font-size:12px;padding:10px;text-align:center;cursor:default}
+.mimg[hidden]{display:none}

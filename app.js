@@ -51,7 +51,7 @@ async function shrink(f,max,q,sq){const im=new Image();im.src=await rd(f);await 
  if(sq){const m=Math.min(w,hh);sx=(w-m)/2;sy=(hh-m)/2;sw=sh=w=hh=m}
  const k=Math.min(1,max/Math.max(w,hh)),c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(hh*k);
  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q)}
-const ld=(id,f)=>{if(M[id])return f(M[id]);db.ref('media/'+id+'/data').get().then(s=>{if(s.val()){M[id]=s.val();f(M[id])}})};
+const ld=(id,f,onfail)=>{if(M[id])return f(M[id]);db.ref('media/'+id+'/data').get().then(s=>{if(s.exists()){M[id]=s.val();f(M[id])}else if(onfail)onfail()}).catch(()=>{if(onfail)onfail()})};
 function lnk(t){const f=document.createDocumentFragment();let i=0;t.replace(/https?:\/\/[^\s<]+/g,(u,p)=>{f.append(t.slice(i,p));const a=h('a','',u);a.href=u;a.target='_blank';a.rel='noopener noreferrer';f.append(a);i=p+u.length;return u});f.append(t.slice(i));return f}
 
 /* ---------- nav ---------- */
@@ -108,7 +108,13 @@ const dl=d=>{const t=new Date(),y=new Date(Date.now()-864e5);return d.toDateStri
 db.ref('globalChat').orderByChild('time').limitToLast(100).on('value',s=>{msgs=[];s.forEach(c=>{msgs.push({id:c.key,...c.val()})});render();notify()});
 function media(m,b){if(!m.mid)return;
  if(m.kind==='sticker'){const im=h('img','mimg stk-msg');im.draggable=false;im.onload=()=>{if(stuck)$('#msgs').scrollTop=1e9};ldSticker(m.mid,d=>im.src=d);b.append(im);b.classList.add('stickerbub');wireLongPress(im,m.mid,m.uid);return}
- if(m.kind==='img'){const im=h('img','mimg');im.onclick=()=>{$('#lb img').src=im.src;$('#lb').hidden=false};im.onload=()=>{if(stuck)$('#msgs').scrollTop=1e9};ld(m.mid,d=>im.src=d);b.append(im)}
+ if(m.kind==='img'){const wrap=h('div','mimgwrap');const sp=h('div','mimgload','Loading photo…');wrap.append(sp);
+  const im=h('img','mimg');im.hidden=true;im.onclick=()=>{$('#lb img').src=im.src;$('#lb').hidden=false};
+  im.onload=()=>{sp.remove();im.hidden=false;if(stuck)$('#msgs').scrollTop=1e9};
+  im.onerror=()=>{sp.textContent='Photo failed to load — tap to retry';sp.onclick=()=>{sp.textContent='Loading photo…';M[m.mid]=null;ld(m.mid,d=>im.src=d,()=>sp.textContent='Photo unavailable')}};
+  wrap.append(im);
+  ld(m.mid,d=>im.src=d,()=>{sp.textContent='Photo unavailable';sp.onclick=null});
+  b.append(wrap)}
  else{const a=h('a','fchip');a.append(fico(),h('span','',(m.fname||'file')+' · '+Math.max(1,Math.ceil((m.fsize||0)/1024))+' KB'));ld(m.mid,d=>{a.href=d;a.download=m.fname||'file'});b.append(a)}}
 function reactBtn(m){const likes=m.likes||{},keys=Object.keys(likes),mine=me&&likes[me.uid];
  const r=h('span','react'+(mine?' on':''));r.innerHTML=svg('heart')+(keys.length?'<b>'+keys.length+'</b>':'');
@@ -276,6 +282,6 @@ function wireLongPress(el,mid,ownerUid){let fired=false;
  el.addEventListener('pointerdown',start);el.addEventListener('pointerup',cancel);el.addEventListener('pointerleave',cancel);el.addEventListener('pointercancel',cancel);
  el.addEventListener('click',e=>{if(fired)e.preventDefault()})}
 function showStkSave(el,mid,ownerUid){if(me&&ownerUid===me.uid)return;const menu=$('#stkSaveMenu');const r=el.getBoundingClientRect();
- menu.style.left=Math.max(8,r.left)+'px';menu.style.top=(r.top+window.scrollY-46)+'px';menu.hidden=false;
+ menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-160))+'px';menu.style.top=Math.max(8,r.top-46)+'px';menu.hidden=false;
  $('#stkSaveBtn').onclick=async()=>{if(!me)return openAuth();try{await db.ref('users/'+me.uid+'/savedStickers/'+mid).set(true);toast('Sticker saved to your collection')}catch(x){toast('Failed to save')}menu.hidden=true}}
 document.addEventListener('click',e=>{if(!$('#stkSaveMenu').contains(e.target)&&!e.target.closest('.stk-msg'))$('#stkSaveMenu').hidden=true});
