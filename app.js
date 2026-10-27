@@ -55,8 +55,13 @@ const ld=(id,f,onfail)=>{if(M[id])return f(M[id]);db.ref('media/'+id+'/data').ge
 function lnk(t){const f=document.createDocumentFragment();let i=0;t.replace(/https?:\/\/[^\s<]+/g,(u,p)=>{f.append(t.slice(i,p));const a=h('a','',u);a.href=u;a.target='_blank';a.rel='noopener noreferrer';f.append(a);i=p+u.length;return u});f.append(t.slice(i));return f}
 
 /* ---------- nav ---------- */
-function go(v){if(v==='dev'&&!isDeveloper())v='chat';view=v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='dev')devLoad();if(v==='missions')renderMissions()}
+const ROUTES={chat:'/chat',loader:'/scripts',missions:'/missions',dev:'/developer'};
+const ROUTES_REV={'/chat':'chat','/scripts':'loader','/missions':'missions','/developer':'dev','/':'chat'};
+function go(v,skipPush){if(v==='dev'&&!isDeveloper())v='chat';view=v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='dev')devLoad();if(v==='missions')renderMissions();
+ if(!skipPush){const path=ROUTES[v]||'/chat';if(location.pathname!==path)history.pushState({v},'',path)}}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+window.addEventListener('popstate',()=>go(ROUTES_REV[location.pathname]||'chat',true));
+const __initPath=location.pathname;go(ROUTES_REV[__initPath]||'chat',true);
 
 /* ---------- auth + profile ---------- */
 function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,uname);$('#dnin').value=getU(me.uid).displayName||uname;
@@ -65,6 +70,9 @@ function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,
 $('#idcopy').onclick=()=>{const id=getU(me.uid).axid;if(id)copy(id);else toast('No ID yet')};
 const openAuth=()=>{$('#mout').hidden=!me;$('#min').hidden=!!me;$('#devbtn').hidden=!isDeveloper();if(me)fillMe();$('#modal').hidden=false};
 $('#acc').onclick=openAuth;
+$('#help').onclick=()=>$('#helpSheet').hidden=false;
+document.querySelector('#helpSheet .backdrop').onclick=()=>$('#helpSheet').hidden=true;
+$('#helphandle').onclick=()=>$('#helpSheet').hidden=true;
 const closeModal=()=>$('#modal').hidden=true;
 document.querySelector('#modal .backdrop').onclick=closeModal;
 $('#mhandle').onclick=closeModal;
@@ -85,7 +93,7 @@ async function cred(reg){const u=$('#au').value.trim(),p=$('#ap').value;
 $('#login').onclick=()=>cred(false);$('#reg').onclick=()=>cred(true);
 auth.onAuthStateChanged(async u=>{me=u;isDev=false;uname='';
  if(u){const[a,b]=await Promise.all([db.ref('users/'+u.uid).get(),db.ref('usernames/'+DEV).get()]);U[u.uid]=a.val()||{};uname=U[u.uid].username||'';isDev=b.val()===u.uid}
- spReady=true;$('#inp').disabled=!me;$('#inp').placeholder=me?'Write a message…':'Log in to send messages';if(view==='dev'&&!isDev)go('chat');render();mineWatch()});
+ spReady=true;if(ROUTES_REV[__initPath]==='dev'&&isDev&&view!=='dev')go('dev',true);$('#inp').disabled=!me;$('#inp').placeholder=me?'Write a message…':'Log in to send messages';if(view==='dev'&&!isDev)go('chat');render();mineWatch()});
 db.ref('usernames/'+DEV).on('value',s=>{devUid=s.val();sched()});
 db.ref('config/links/discord').on('value',s=>{const a=$('#dc'),v=s.val();a.hidden=!v;if(v)a.href=v});
 db.ref('config/announcement').on('value',s=>{const v=s.val(),a=$('#ann');a.hidden=!v;a.textContent=v||''});
@@ -288,6 +296,15 @@ function showStkSave(el,mid,ownerUid){if(me&&ownerUid===me.uid)return;const menu
 document.addEventListener('click',e=>{if(!$('#stkSaveMenu').contains(e.target)&&!e.target.closest('.stk-msg'))$('#stkSaveMenu').hidden=true});
 
 /* ---------- missions ---------- */
+document.querySelectorAll('#mTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#mTabs button').forEach(x=>x.classList.toggle('on',x===b));
+ const board=b.dataset.t==='board';$('#mineWrap').hidden=board;$('#boardWrap').hidden=!board;if(board)loadBoard()});
+async function loadBoard(){const box=$('#boardList');box.textContent='Loading…';
+ try{const s=await db.ref('users').orderByChild('points').limitToLast(20).get();const rows=[];s.forEach(c=>rows.push({uid:c.key,...c.val()}));
+  rows.reverse();box.textContent='';if(!rows.length)return box.append(h('div','card','No one has earned points yet.'));
+  rows.forEach((r,i)=>{const row=h('div','board');row.append(h('span','rank','#'+(i+1)));
+   const av=h('div','av2');paint(av,r.uid,r.displayName||r.username||'?');row.append(av);
+   row.append(h('b','',r.displayName||r.username||'Anonymous'),h('span','',(r.points||0)+' pts'));box.append(row)})}
+ catch(x){console.error(x);box.textContent='Failed to load leaderboard ('+(x&&x.code||'error')+')'}}
 const MISSIONS=[
  {id:'m1',title:'First message',desc:'Send your first message in chat',reward:50,manual:false,check:s=>(s.messages||0)>=1},
  {id:'m2',title:'Chatterbox',desc:'Send 25 messages',reward:100,manual:false,check:s=>(s.messages||0)>=25},
