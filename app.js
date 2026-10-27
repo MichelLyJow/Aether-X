@@ -55,7 +55,7 @@ const ld=(id,f,onfail)=>{if(M[id])return f(M[id]);db.ref('media/'+id+'/data').ge
 function lnk(t){const f=document.createDocumentFragment();let i=0;t.replace(/https?:\/\/[^\s<]+/g,(u,p)=>{f.append(t.slice(i,p));const a=h('a','',u);a.href=u;a.target='_blank';a.rel='noopener noreferrer';f.append(a);i=p+u.length;return u});f.append(t.slice(i));return f}
 
 /* ---------- nav ---------- */
-function go(v){if(v==='dev'&&!isDeveloper())v='chat';view=v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='dev')devLoad()}
+function go(v){if(v==='dev'&&!isDeveloper())v='chat';view=v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+v));document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));if(v==='dev')devLoad();if(v==='missions')renderMissions()}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
 
 /* ---------- auth + profile ---------- */
@@ -170,7 +170,7 @@ async function send(){if(!me)return openAuth();const t=$('#inp').value.trim().sl
  try{if(editing){if(!t)return;await db.ref('globalChat/'+editing).update({text:t,edited:true})}
   else{const o={uid:me.uid,name:uname,text:t,time:TS,replyTo:reply,edited:false};
    if(att){const mid=db.ref('media').push().key;await db.ref('media/'+mid).set({uid:me.uid,kind:att.kind,name:att.name,data:att.data});o.mid=mid;o.kind=att.kind;o.fname=att.name;if(att.size)o.fsize=att.size}
-   await db.ref('globalChat').push(o)}
+   await db.ref('globalChat').push(o);bump('messages')}
   $('#inp').value='';reply=null;editing=null;att=null;bar();setTyping(false)}catch(e){toast('Failed to send')}}
 $('#send').onclick=send;$('#inp').onkeydown=e=>{if(e.key==='Enter')send()};
 
@@ -198,7 +198,7 @@ function deobfLua(src){if(!src.includes(TAG))return null;const m=src.match(/loca
  const key=+m[1],bytes=m[2].split(',').filter(Boolean).map(Number);return new TextDecoder().decode(new Uint8Array(bytes.map(b=>b^key)))}
 function setLmode(m){lmode=m;document.querySelectorAll('#lmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
  const protect=m==='protect';
- $('#lname').style.display=protect?'':'none';$('#imp').style.display=protect?'':'none';
+ $('#lname').style.display=protect?'':'none';
  $('#gen').textContent=protect?(editLoader?'Save changes':'Generate loader'):m==='obf'?'Obfuscate':'Deobfuscate';
  $('#out').hidden=true;$('#outact').hidden=true;document.querySelectorAll('#v-loader h3,#lq,#mine').forEach(e=>e.style.display=protect?'':'none');setStep(1)}
 document.querySelectorAll('#lmode button').forEach(b=>b.onclick=()=>setLmode(b.dataset.m));
@@ -215,7 +215,7 @@ $('#gen').onclick=async()=>{
  if(!me)return openAuth();const name=$('#lname').value.trim(),code=$('#lcode').value,slug=slugify(name);
  if(!slug||!code.trim())return toast('Enter a name and code');setStep(2);const r=db.ref('loaders/'+slug);
  try{if(editLoader)await r.update({code,updated:Date.now()});
-  else{if((await r.get()).exists()){setStep(1);return toast('Name already taken')}await r.set({code,name,ownerUid:me.uid,created:Date.now(),updated:Date.now()})}
+  else{if((await r.get()).exists()){setStep(1);return toast('Name already taken')}await r.set({code,name,ownerUid:me.uid,created:Date.now(),updated:Date.now()});bump('loaders')}
   const sn=snip(slug);showOutput(sn,'loadstring.txt');await copy(sn);setStep(3);editLoader=null;$('#lname').readOnly=false;$('#gen').textContent='Generate loader'}
  catch(e){setStep(1);toast('Failed: '+e.message)}};
 let mineRef=null;
@@ -260,7 +260,7 @@ $('#fstk').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)
 document.querySelectorAll('#stkVis button').forEach(b=>b.onclick=()=>document.querySelectorAll('#stkVis button').forEach(x=>x.classList.toggle('on',x===b)));
 $('#stkCancel').onclick=()=>{$('#stkNew').hidden=true;stkDraft=null};
 $('#stkSave').onclick=async()=>{if(!stkDraft||!me)return;const name=$('#stkName').value.trim()||'Sticker';const pub=document.querySelector('#stkVis button.on').dataset.v==='public';
- try{await db.ref('stickers').push({uid:me.uid,name,data:stkDraft,public:pub,created:TS});$('#stkNew').hidden=true;stkDraft=null;toast('Sticker saved');stkTab='mine';document.querySelectorAll('#stkTabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='mine'));loadStickers()}catch(x){toast('Failed to save')}};
+ try{await db.ref('stickers').push({uid:me.uid,name,data:stkDraft,public:pub,created:TS});bump('stickers');$('#stkNew').hidden=true;stkDraft=null;toast('Sticker saved');stkTab='mine';document.querySelectorAll('#stkTabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='mine'));loadStickers()}catch(x){toast('Failed to save')}};
 async function shrinkPng(f,max){const im=new Image();im.src=await rd(f);await im.decode();const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/png')}
 async function loadStickers(){const grid=$('#stkGrid');grid.textContent='Loading…';
  try{let items=[];
@@ -286,3 +286,43 @@ function showStkSave(el,mid,ownerUid){if(me&&ownerUid===me.uid)return;const menu
  menu.style.left=Math.max(8,Math.min(r.left,window.innerWidth-160))+'px';menu.style.top=Math.max(8,r.top-46)+'px';menu.hidden=false;
  $('#stkSaveBtn').onclick=async()=>{if(!me)return openAuth();try{await db.ref('users/'+me.uid+'/savedStickers/'+mid).set(true);toast('Sticker saved to your collection')}catch(x){toast('Failed to save')}menu.hidden=true}}
 document.addEventListener('click',e=>{if(!$('#stkSaveMenu').contains(e.target)&&!e.target.closest('.stk-msg'))$('#stkSaveMenu').hidden=true});
+
+/* ---------- missions ---------- */
+const MISSIONS=[
+ {id:'m1',title:'First message',desc:'Send your first message in chat',reward:50,manual:false,check:s=>(s.messages||0)>=1},
+ {id:'m2',title:'Chatterbox',desc:'Send 25 messages',reward:100,manual:false,check:s=>(s.messages||0)>=25},
+ {id:'m3',title:'Social butterfly',desc:'Send 100 messages',reward:250,manual:false,check:s=>(s.messages||0)>=100},
+ {id:'m4',title:'First loader',desc:'Create your first script loader',reward:100,manual:false,check:s=>(s.loaders||0)>=1},
+ {id:'m5',title:'Loader factory',desc:'Create 5 script loaders',reward:300,manual:false,check:s=>(s.loaders||0)>=5},
+ {id:'m6',title:'Sticker artist',desc:'Create your first sticker',reward:75,manual:false,check:s=>(s.stickers||0)>=1},
+ {id:'m7',title:'Sticker pack',desc:'Create 5 stickers',reward:200,manual:false,check:s=>(s.stickers||0)>=5},
+ {id:'m8',title:'Profile complete',desc:'Set a display name and a profile photo',reward:75,manual:false,check:(s,u)=>!!(u.displayName&&u.avatar)},
+ {id:'m9',title:'Join the community',desc:'Join the Aether X Discord server',reward:50,manual:true},
+];
+function bump(stat){if(!me)return;db.ref('users/'+me.uid+'/stats/'+stat).transaction(v=>(v||0)+1).then(()=>{if(view==='missions')renderMissions()})}
+async function renderMissions(){if(!me){$('#missionList').textContent='';$('#missionList').append(h('div','card','Log in to track missions and earn AX Points.'));$('#myPoints').textContent='0';return}
+ const[uS,cS]=await Promise.all([db.ref('users/'+me.uid).get(),db.ref('users/'+me.uid+'/claimed').get()]);
+ const u=uS.val()||{},stats=u.stats||{},claimed=cS.val()||{};
+ $('#myPoints').textContent=u.points||0;
+ const list=$('#missionList');list.textContent='';
+ MISSIONS.forEach(m=>{const done=m.manual?true:!!m.check(stats,u);const got=!!claimed[m.id];
+  const c=h('div','card mission'+(got?' done':''));
+  const top=h('div','mtop');top.append(h('b','',m.title),h('span','mreward','+'+m.reward));c.append(top);
+  c.append(h('p','',m.desc));
+  const btnRow=h('div','two');
+  if(got)btnRow.append(btn('Claimed',null,'ghost'));
+  else if(m.manual)btnRow.append(btn('Claim reward',()=>claimMission(m),'grad'));
+  else if(done)btnRow.append(btn('Claim reward',()=>claimMission(m),'grad'));
+  else btnRow.append(btn(progressText(m,stats),null,'ghost'));
+  c.append(btnRow);list.append(c)})}
+function progressText(m,stats){
+ if(m.id==='m2')return (stats.messages||0)+' / 25 messages';
+ if(m.id==='m3')return (stats.messages||0)+' / 100 messages';
+ if(m.id==='m5')return (stats.loaders||0)+' / 5 loaders';
+ if(m.id==='m7')return (stats.stickers||0)+' / 5 stickers';
+ return 'Not completed yet';}
+async function claimMission(m){if(!me)return;
+ try{const cRef=db.ref('users/'+me.uid+'/claimed/'+m.id);if((await cRef.get()).exists())return toast('Already claimed');
+  if(!m.manual){const s=(await db.ref('users/'+me.uid+'/stats').get()).val()||{};const u=(await db.ref('users/'+me.uid).get()).val()||{};if(!m.check(s,u))return toast('Mission not completed yet')}
+  await cRef.set(true);await db.ref('users/'+me.uid+'/points').transaction(v=>(v||0)+m.reward);
+  toast('+'+m.reward+' AX Points!');renderMissions()}catch(e){toast('Failed to claim')}}

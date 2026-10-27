@@ -149,3 +149,12 @@ input,textarea{border-radius:16px}
 /* ---------- badge fill fix (global svg{fill:none} was overriding it) ---------- */
 .bverify svg{fill:#2F6FED!important;stroke:none!important}
 .bverify svg path:last-child{fill:none!important;stroke:#fff!important;stroke-width:1.8!important}
+
+/* ---------- missions ---------- */
+.mission{display:flex;flex-direction:column;gap:6px}
+.mtop{display:flex;justify-content:space-between;align-items:center}
+.mtop b{font-size:15px}
+.mreward{font-weight:800;color:var(--a);font-size:13px}
+.mission p{color:var(--t2);font-size:13px;margin:0}
+.mission .two{justify-content:flex-start}.mission .two button{flex:none;padding:8px 18px}
+.mission.done{opacity:.6}
