@@ -121,3 +121,22 @@ input,textarea{border-radius:16px}
 .bstaff{width:16px;height:16px;border-radius:4px;vertical-align:-3px;object-fit:contain}
 .nm{display:flex;align-items:center;gap:4px}
 #bres{font-size:12px;color:var(--t2);margin-top:4px}
+
+/* ---------- stickers + loader output ---------- */
+#outact{margin-top:8px}
+#stkpanel{position:absolute;left:8px;right:8px;bottom:64px;background:var(--card);border:1px solid var(--bd);border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:12px;z-index:6;max-height:340px;display:flex;flex-direction:column}
+#stkpanel[hidden]{display:none}
+.stkhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.stkhead .seg{margin:0;flex:1;margin-right:10px}
+#stkAdd{width:34px;height:34px;border-radius:50%;background:var(--g);color:#fff;border:0;font-size:18px;line-height:1;cursor:pointer}
+#stkGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;overflow-y:auto}
+.sticktile{aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--bg);border:1px solid var(--bd);cursor:pointer;display:grid;place-items:center}
+.sticktile img{width:100%;height:100%;object-fit:contain}
+#stkNew{background:var(--bg);border:1px solid var(--bd);border-radius:16px;padding:10px;margin-bottom:10px}
+#stkNew img{width:84px;height:84px;object-fit:contain;display:block;margin:0 auto 8px;background:var(--card);border-radius:12px}
+.stickerbub{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+.mine .stickerbub{background:none!important}
+.mimg.stk-msg{max-width:140px;max-height:140px;min-width:0;min-height:0;background:none}
+#stkSaveMenu{position:absolute;z-index:11;background:#18181B;border-radius:12px;padding:4px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+#stkSaveMenu[hidden]{display:none}
+#stkSaveMenu button{background:none;border:0;color:#fff;font-size:13px;font-weight:600;padding:8px 14px;cursor:pointer;white-space:nowrap}

@@ -107,6 +107,7 @@ db.ref('typing').on('value',s=>{const t=$('#typing'),others=[];s.forEach(c=>{if(
 const dl=d=>{const t=new Date(),y=new Date(Date.now()-864e5);return d.toDateString()===t.toDateString()?'Today':d.toDateString()===y.toDateString()?'Yesterday':d.toLocaleDateString('en-US',{day:'numeric',month:'long',year:'numeric'})};
 db.ref('globalChat').orderByChild('time').limitToLast(100).on('value',s=>{msgs=[];s.forEach(c=>{msgs.push({id:c.key,...c.val()})});render();notify()});
 function media(m,b){if(!m.mid)return;
+ if(m.kind==='sticker'){const im=h('img','mimg stk-msg');im.draggable=false;im.onload=()=>{if(stuck)$('#msgs').scrollTop=1e9};ldSticker(m.mid,d=>im.src=d);b.append(im);b.classList.add('stickerbub');wireLongPress(im,m.mid,m.uid);return}
  if(m.kind==='img'){const im=h('img','mimg');im.onclick=()=>{$('#lb img').src=im.src;$('#lb').hidden=false};im.onload=()=>{if(stuck)$('#msgs').scrollTop=1e9};ld(m.mid,d=>im.src=d);b.append(im)}
  else{const a=h('a','fchip');a.append(fico(),h('span','',(m.fname||'file')+' · '+Math.max(1,Math.ceil((m.fsize||0)/1024))+' KB'));ld(m.mid,d=>{a.href=d;a.download=m.fname||'file'});b.append(a)}}
 function reactBtn(m){const likes=m.likes||{},keys=Object.keys(likes),mine=me&&likes[me.uid];
@@ -193,20 +194,23 @@ function setLmode(m){lmode=m;document.querySelectorAll('#lmode button').forEach(
  const protect=m==='protect';
  $('#lname').style.display=protect?'':'none';$('#imp').style.display=protect?'':'none';
  $('#gen').textContent=protect?(editLoader?'Save changes':'Generate loader'):m==='obf'?'Obfuscate':'Deobfuscate';
- $('#out').hidden=true;document.querySelectorAll('#v-loader h3,#lq,#mine').forEach(e=>e.style.display=protect?'':'none');setStep(1)}
+ $('#out').hidden=true;$('#outact').hidden=true;document.querySelectorAll('#v-loader h3,#lq,#mine').forEach(e=>e.style.display=protect?'':'none');setStep(1)}
 document.querySelectorAll('#lmode button').forEach(b=>b.onclick=()=>setLmode(b.dataset.m));
 
 /* ---------- loader ---------- */
 const setStep=n=>[1,2,3].forEach(i=>$('#s'+i).classList.toggle('on',i<=n));
 function resetForm(){editLoader=null;$('#lname').value='';$('#lname').readOnly=false;$('#lcode').value='';$('#gen').textContent='Generate loader';setStep(1)}
+function showOutput(text,fname){$('#out').textContent=text;$('#out').hidden=false;$('#outact').hidden=false;
+ $('#outcopy').onclick=()=>copy(text);
+ $('#outdl').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.download=fname;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}}
 $('#gen').onclick=async()=>{
- if(lmode==='obf'){const code=$('#lcode').value;if(!code.trim())return toast('Paste code to obfuscate');const out=obfLua(code);$('#out').textContent=out;$('#out').hidden=false;await copy(out);return}
- if(lmode==='deobf'){const code=$('#lcode').value;const out=deobfLua(code);if(!out)return toast('Not recognized as an Aether X obfuscated script');$('#out').textContent=out;$('#out').hidden=false;await copy(out);return}
+ if(lmode==='obf'){const code=$('#lcode').value;if(!code.trim())return toast('Paste code to obfuscate');showOutput(obfLua(code),'obfuscated.lua');return}
+ if(lmode==='deobf'){const code=$('#lcode').value;const out=deobfLua(code);if(!out)return toast('Not recognized as an Aether X obfuscated script');showOutput(out,'deobfuscated.lua');return}
  if(!me)return openAuth();const name=$('#lname').value.trim(),code=$('#lcode').value,slug=slugify(name);
  if(!slug||!code.trim())return toast('Enter a name and code');setStep(2);const r=db.ref('loaders/'+slug);
  try{if(editLoader)await r.update({code,updated:Date.now()});
   else{if((await r.get()).exists()){setStep(1);return toast('Name already taken')}await r.set({code,name,ownerUid:me.uid,created:Date.now(),updated:Date.now()})}
-  const sn=snip(slug);$('#out').textContent=sn;$('#out').hidden=false;await copy(sn);setStep(3);editLoader=null;$('#lname').readOnly=false;$('#gen').textContent='Generate loader'}
+  const sn=snip(slug);showOutput(sn,'loadstring.txt');await copy(sn);setStep(3);editLoader=null;$('#lname').readOnly=false;$('#gen').textContent='Generate loader'}
  catch(e){setStep(1);toast('Failed: '+e.message)}};
 let mineRef=null;
 function filterMine(){const q=$('#lq').value.trim().toLowerCase();document.querySelectorAll('#mine .item').forEach(e=>e.hidden=!!q&&!e.dataset.n.includes(q))}
@@ -237,3 +241,41 @@ async function toggleBadge(kind){if(!isDeveloper())return;const id=$('#bid').val
 $('#bverif').onclick=()=>toggleBadge('verified');$('#bstaff').onclick=()=>toggleBadge('staff');
 $('#clear').onclick=()=>{if(isDeveloper()&&confirm('Delete all loaded messages?')){const u={};msgs.forEach(m=>{u['globalChat/'+m.id]=null;if(m.mid)u['media/'+m.mid]=null});db.ref().update(u).then(()=>toast('Chat cleared')).catch(()=>toast('Denied'))}};
 $('#mcopy').onclick=()=>copy(snip());
+
+/* ---------- stickers ---------- */
+let stkTab='mine',stkDraft=null;
+const am2=$('#stkpanel');
+$('#astk').onclick=e=>{e.stopPropagation();if(!me)return openAuth();am.hidden=true;am2.hidden=!am2.hidden;if(!am2.hidden)loadStickers()};
+document.addEventListener('click',e=>{if(!am2.contains(e.target)&&e.target.id!=='astk')am2.hidden=true});
+document.querySelectorAll('#stkTabs button').forEach(b=>b.onclick=()=>{stkTab=b.dataset.t;document.querySelectorAll('#stkTabs button').forEach(x=>x.classList.toggle('on',x===b));loadStickers()});
+$('#stkAdd').onclick=()=>$('#fstk').click();
+$('#fstk').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{const data=await shrinkPng(f,320);stkDraft=data;$('#stkPrev').src=data;$('#stkName').value='';document.querySelectorAll('#stkVis button').forEach((b,i)=>b.classList.toggle('on',i===0));$('#stkNew').hidden=false}catch(x){toast('Could not read image')}};
+document.querySelectorAll('#stkVis button').forEach(b=>b.onclick=()=>document.querySelectorAll('#stkVis button').forEach(x=>x.classList.toggle('on',x===b)));
+$('#stkCancel').onclick=()=>{$('#stkNew').hidden=true;stkDraft=null};
+$('#stkSave').onclick=async()=>{if(!stkDraft||!me)return;const name=$('#stkName').value.trim()||'Sticker';const pub=document.querySelector('#stkVis button.on').dataset.v==='public';
+ try{await db.ref('stickers').push({uid:me.uid,name,data:stkDraft,public:pub,created:TS});$('#stkNew').hidden=true;stkDraft=null;toast('Sticker saved');stkTab='mine';document.querySelectorAll('#stkTabs button').forEach(x=>x.classList.toggle('on',x.dataset.t==='mine'));loadStickers()}catch(x){toast('Failed to save')}};
+async function shrinkPng(f,max){const im=new Image();im.src=await rd(f);await im.decode();const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/png')}
+async function loadStickers(){const grid=$('#stkGrid');grid.textContent='Loading…';
+ try{let items=[];
+  if(stkTab==='public'){const s=await db.ref('stickers').orderByChild('public').equalTo(true).limitToLast(60).get();s.forEach(c=>items.push({id:c.key,...c.val()}))}
+  else{const own=await db.ref('stickers').orderByChild('uid').equalTo(me.uid).get();own.forEach(c=>items.push({id:c.key,...c.val()}));
+   const saved=await db.ref('users/'+me.uid+'/savedStickers').get();const ids=saved.exists()?Object.keys(saved.val()):[];
+   for(const id of ids){if(items.find(i=>i.id===id))continue;const s=await db.ref('stickers/'+id).get();if(s.exists())items.push({id,...s.val()})}}
+  grid.textContent='';if(!items.length)grid.append(h('div','',stkTab==='mine'?'No stickers yet. Tap + to add one.':'No public stickers yet.'));
+  items.reverse().forEach(it=>{const t=h('div','sticktile');const im=h('img');im.src=it.data;im.title=it.name||'';t.append(im);
+   t.onclick=()=>sendSticker(it.id);grid.append(t)})}catch(x){grid.textContent='Failed to load stickers'}}
+async function sendSticker(id){if(!me)return;if(Date.now()-last<2000)return toast('Wait 2 seconds');last=Date.now();
+ try{await db.ref('globalChat').push({uid:me.uid,name:uname,text:'',time:TS,replyTo:null,edited:false,kind:'sticker',mid:id});am2.hidden=true}catch(x){toast('Failed to send sticker')}}
+const SC={};
+function ldSticker(id,f){if(SC[id])return f(SC[id]);db.ref('stickers/'+id+'/data').get().then(s=>{if(s.exists()){SC[id]=s.val();f(SC[id])}})}
+let pressT=null;
+function wireLongPress(el,mid,ownerUid){let fired=false;
+ const start=ev=>{fired=false;pressT=setTimeout(()=>{fired=true;showStkSave(el,mid,ownerUid)},2000)};
+ const cancel=()=>clearTimeout(pressT);
+ el.addEventListener('pointerdown',start);el.addEventListener('pointerup',cancel);el.addEventListener('pointerleave',cancel);el.addEventListener('pointercancel',cancel);
+ el.addEventListener('click',e=>{if(fired)e.preventDefault()})}
+function showStkSave(el,mid,ownerUid){if(me&&ownerUid===me.uid)return;const menu=$('#stkSaveMenu');const r=el.getBoundingClientRect();
+ menu.style.left=Math.max(8,r.left)+'px';menu.style.top=(r.top+window.scrollY-46)+'px';menu.hidden=false;
+ $('#stkSaveBtn').onclick=async()=>{if(!me)return openAuth();try{await db.ref('users/'+me.uid+'/savedStickers/'+mid).set(true);toast('Sticker saved to your collection')}catch(x){toast('Failed to save')}menu.hidden=true}}
+document.addEventListener('click',e=>{if(!$('#stkSaveMenu').contains(e.target)&&!e.target.closest('.stk-msg'))$('#stkSaveMenu').hidden=true});
