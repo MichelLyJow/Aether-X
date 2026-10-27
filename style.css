@@ -145,3 +145,7 @@ input,textarea{border-radius:16px}
 .mimgwrap{position:relative;min-width:140px;min-height:90px;max-width:100%}
 .mimgload{min-width:140px;min-height:90px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:1px solid var(--bd);border-radius:12px;color:var(--t2);font-size:12px;padding:10px;text-align:center;cursor:default}
 .mimg[hidden]{display:none}
+
+/* ---------- badge fill fix (global svg{fill:none} was overriding it) ---------- */
+.bverify svg{fill:#2F6FED!important;stroke:none!important}
+.bverify svg path:last-child{fill:none!important;stroke:#fff!important;stroke-width:1.8!important}

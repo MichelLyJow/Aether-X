@@ -270,7 +270,8 @@ async function loadStickers(){const grid=$('#stkGrid');grid.textContent='Loading
    for(const id of ids){if(items.find(i=>i.id===id))continue;const s=await db.ref('stickers/'+id).get();if(s.exists())items.push({id,...s.val()})}}
   grid.textContent='';if(!items.length)grid.append(h('div','',stkTab==='mine'?'No stickers yet. Tap + to add one.':'No public stickers yet.'));
   items.reverse().forEach(it=>{const t=h('div','sticktile');const im=h('img');im.src=it.data;im.title=it.name||'';t.append(im);
-   t.onclick=()=>sendSticker(it.id);grid.append(t)})}catch(x){grid.textContent='Failed to load stickers'}}
+   t.onclick=()=>sendSticker(it.id);grid.append(t)})}
+ catch(x){console.error('loadStickers failed:',x);grid.textContent='Failed to load stickers ('+(x&&x.code||x&&x.message||'unknown error')+')'}}
 async function sendSticker(id){if(!me)return;if(Date.now()-last<2000)return toast('Wait 2 seconds');last=Date.now();
  try{await db.ref('globalChat').push({uid:me.uid,name:uname,text:'',time:TS,replyTo:null,edited:false,kind:'sticker',mid:id});am2.hidden=true}catch(x){toast('Failed to send sticker')}}
 const SC={};
