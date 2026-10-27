@@ -161,12 +161,9 @@ input,textarea{border-radius:16px}
 .mission.done{opacity:.6}
 
 /* ---------- help sheet + leaderboard ---------- */
-#helpSheet{position:fixed;inset:0;z-index:12;display:flex;align-items:flex-end;justify-content:center}
-#helpSheet[hidden]{display:none}
-#helpSheet .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
-#helpSheet .card{position:relative;width:100%;max-width:560px;max-height:82vh;overflow-y:auto;border-radius:24px 24px 0 0;animation:sheet .32s cubic-bezier(.22,1,.36,1)}
-#helpSheet h3{margin:4px 0 14px}
-.helpitem{margin-bottom:14px}.helpitem b{display:block;margin-bottom:3px}.helpitem p{color:var(--t2);font-size:13px;margin:0}
+#howInfo{text-align:left;margin:4px 0 12px;padding:12px;background:var(--bg);border:1px solid var(--bd);border-radius:16px}
+#howInfo[hidden]{display:none}
+.helpitem{margin-bottom:12px}.helpitem:last-child{margin-bottom:0}.helpitem b{display:block;margin-bottom:3px;font-size:13px}.helpitem p{color:var(--t2);font-size:12px;margin:0}
 #mTabs{margin:0 4px 12px}
 .board{display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border:1px solid var(--bd);border-radius:16px;margin-bottom:8px}
 .board .rank{width:24px;text-align:center;font-weight:800;color:var(--t2)}

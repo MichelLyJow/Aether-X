@@ -72,9 +72,7 @@ function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,
 $('#idcopy').onclick=()=>{const id=getU(me.uid).axid;if(id)copy(id);else toast('No ID yet')};
 const openAuth=()=>{$('#mout').hidden=!me;$('#min').hidden=!!me;$('#devbtn').hidden=!isDeveloper();if(me)fillMe();$('#modal').hidden=false};
 $('#acc').onclick=openAuth;
-$('#help').onclick=()=>{toast('Opening help…');$('#helpSheet').hidden=false};
-document.querySelector('#helpSheet .backdrop').onclick=()=>$('#helpSheet').hidden=true;
-$('#helphandle').onclick=()=>$('#helpSheet').hidden=true;
+$('#howbtn').onclick=()=>$('#howInfo').hidden=!$('#howInfo').hidden;
 const closeModal=()=>$('#modal').hidden=true;
 document.querySelector('#modal .backdrop').onclick=closeModal;
 $('#mhandle').onclick=closeModal;
