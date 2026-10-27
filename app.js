@@ -174,7 +174,7 @@ $('#inp').oninput=()=>{setTyping(true);clearTimeout(typeT);typeT=setTimeout(()=>
 function notify(){const l=msgs[msgs.length-1];if(!l)return;if(seen!==null&&l.id!==seen&&me&&l.uid!==me.uid&&document.hidden){unread++;document.title='('+unread+') Aether X';if(snd)beep()}seen=l.id}
 
 /* ---------- send ---------- */
-async function send(){if(!me)return openAuth();const t=$('#inp').value.trim().slice(0,300);if(!t&&!att)return;if(Date.now()-last<2000)return toast('Wait 2 seconds');last=Date.now();
+async function send(){if(!me)return openAuth();const t=$('#inp').value.trim().slice(0,300);if(!t&&!att)return;if(Date.now()-last<5000)return toast('Wait '+Math.ceil((5000-(Date.now()-last))/1000)+' seconds');last=Date.now();
  try{if(editing){if(!t)return;await db.ref('globalChat/'+editing).update({text:t,edited:true})}
   else{const o={uid:me.uid,name:uname,text:t,time:TS,replyTo:reply,edited:false};
    if(att){const mid=db.ref('media').push().key;await db.ref('media/'+mid).set({uid:me.uid,kind:att.kind,name:att.name,data:att.data});o.mid=mid;o.kind=att.kind;o.fname=att.name;if(att.size)o.fsize=att.size}
@@ -298,12 +298,16 @@ document.addEventListener('click',e=>{if(!$('#stkSaveMenu').contains(e.target)&&
 /* ---------- missions ---------- */
 document.querySelectorAll('#mTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#mTabs button').forEach(x=>x.classList.toggle('on',x===b));
  const board=b.dataset.t==='board';$('#mineWrap').hidden=board;$('#boardWrap').hidden=!board;if(board)loadBoard()});
+const MEDAL=['#FFD54A','#C9CDD6','#D98F55'];
+function rankBadge(i){const rank=i+1;
+ if(rank<=3){const b=h('div','rankmedal');b.style.background=MEDAL[i];b.textContent=rank;return b}
+ const t=h('span','rank',rank>99?'99+':'#'+rank);return t}
 async function loadBoard(){const box=$('#boardList');box.textContent='Loading…';
  try{const s=await db.ref('users').orderByChild('points').limitToLast(20).get();const rows=[];s.forEach(c=>rows.push({uid:c.key,...c.val()}));
   rows.reverse();box.textContent='';if(!rows.length)return box.append(h('div','card','No one has earned points yet.'));
-  rows.forEach((r,i)=>{const row=h('div','board');row.append(h('span','rank','#'+(i+1)));
+  rows.forEach((r,i)=>{const row=h('div','board'+(i<3?' top3':''));row.append(rankBadge(i));
    const av=h('div','av2');paint(av,r.uid,r.displayName||r.username||'?');row.append(av);
-   row.append(h('b','',r.displayName||r.username||'Anonymous'),h('span','',(r.points||0)+' pts'));box.append(row)})}
+   row.append(h('b','',r.displayName||r.username||'Anonymous'),h('span','pts',(r.points||0)+' AXP'));box.append(row)})}
  catch(x){console.error(x);box.textContent='Failed to load leaderboard ('+(x&&x.code||'error')+')'}}
 const MISSIONS=[
  {id:'m1',title:'First message',desc:'Send your first message in chat',reward:50,manual:false,check:s=>(s.messages||0)>=1},
@@ -316,7 +320,15 @@ const MISSIONS=[
  {id:'m8',title:'Profile complete',desc:'Set a display name and a profile photo',reward:75,manual:false,check:(s,u)=>!!(u.displayName&&u.avatar)},
  {id:'m9',title:'Join the community',desc:'Join the Aether X Discord server',reward:50,manual:true},
 ];
-function bump(stat){if(!me)return;db.ref('users/'+me.uid+'/stats/'+stat).transaction(v=>(v||0)+1).then(()=>{if(view==='missions')renderMissions()})}
+function bump(stat){if(!me)return;db.ref('users/'+me.uid+'/stats/'+stat).transaction(v=>(v||0)+1).then(r=>{
+ if(view==='missions')renderMissions();
+ if(!r.committed)return;awardPassive(stat,r.snapshot.val())})}
+function awardPassive(stat,val){let amt=0,label='';
+ if(stat==='messages'&&val%5===0){amt=10;label='5 messages sent'}
+ else if(stat==='loaders'){amt=15;label='loader created'}
+ else if(stat==='stickers'){amt=10;label='sticker created'}
+ if(!amt||!me)return;
+ db.ref('users/'+me.uid+'/points').transaction(v=>Math.min(3000,(v||0)+amt)).then(r=>{if(r.committed)toast('+'+amt+' AXP — '+label+'!')})}
 async function renderMissions(){if(!me){$('#missionList').textContent='';$('#missionList').append(h('div','card','Log in to track missions and earn AX Points.'));$('#myPoints').textContent='0';return}
  const[uS,cS]=await Promise.all([db.ref('users/'+me.uid).get(),db.ref('users/'+me.uid+'/claimed').get()]);
  const u=uS.val()||{},stats=u.stats||{},claimed=cS.val()||{};

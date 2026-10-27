@@ -166,7 +166,9 @@ input,textarea{border-radius:16px}
 .helpitem{margin-bottom:12px}.helpitem:last-child{margin-bottom:0}.helpitem b{display:block;margin-bottom:3px;font-size:13px}.helpitem p{color:var(--t2);font-size:12px;margin:0}
 #mTabs{margin:0 4px 12px}
 .board{display:flex;align-items:center;gap:10px;padding:12px;background:var(--card);border:1px solid var(--bd);border-radius:16px;margin-bottom:8px}
-.board .rank{width:24px;text-align:center;font-weight:800;color:var(--t2)}
+.board.top3{border-color:rgba(255,213,74,.5)}
+.board .rank{width:28px;text-align:center;font-weight:800;color:var(--t2);flex:none}
+.rankmedal{width:28px;height:28px;border-radius:50%;color:#18181B;font-weight:800;font-size:13px;display:grid;place-items:center;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .board .av2{width:36px;height:36px;border-radius:50%;color:#fff;font-weight:700;display:grid;place-items:center;flex:none}
 .board b{flex:1;font-size:14px}
-.board span{font-weight:800;color:var(--a)}
+.board .pts{font-weight:800;color:var(--tx)}
