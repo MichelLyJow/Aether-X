@@ -25,10 +25,10 @@ const ib=(n,f,extra)=>{const b=h('button',extra||'');b.innerHTML=svg(n);b.onclic
 const fico=()=>{const s=h('span');s.innerHTML=svg('file');return s};
 
 /* ---------- accent colors ---------- */
-const ACC=[['#2F6FED','#49C7E8'],['#7C3AED','#C084FC'],['#059669','#34D399'],['#EA580C','#FBBF24'],['#DB2777','#F472B6']];
+const ACC=[['#18181B','#52525B'],['#2F6FED','#49C7E8'],['#7C3AED','#C084FC'],['#059669','#34D399'],['#EA580C','#FBBF24'],['#DB2777','#F472B6']];
 function setAcc(i){const[a,b]=ACC[i],r=document.documentElement.style;r.setProperty('--a',a);r.setProperty('--g','linear-gradient(135deg,'+a+','+b+')');document.querySelectorAll('#sw button').forEach((e,j)=>e.classList.toggle('on',j===i));try{localStorage.setItem('ax-acc',i)}catch(e){}}
 ACC.forEach((c,i)=>{const b=h('button');b.style.background='linear-gradient(135deg,'+c[0]+','+c[1]+')';b.onclick=()=>setAcc(i);$('#sw').append(b)});
-try{setAcc(+(localStorage.getItem('ax-acc'))||0)}catch(e){setAcc(0)}
+try{const v=localStorage.getItem('ax-acc');setAcc(v===null?0:+v)}catch(e){setAcc(0)}
 
 /* ---------- theme ---------- */
 const setTheme=t=>{document.documentElement.dataset.theme=t;try{localStorage.setItem('ax-theme',t)}catch(e){}};
@@ -55,7 +55,10 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v
 /* ---------- auth + profile ---------- */
 function fillMe(){$('#who').textContent=dn(me.uid,uname);paint($('#pav'),me.uid,uname);$('#dnin').value=getU(me.uid).displayName||uname}
 const openAuth=()=>{$('#mout').hidden=!me;$('#min').hidden=!!me;$('#devbtn').hidden=!isDeveloper();if(me)fillMe();$('#modal').hidden=false};
-$('#acc').onclick=openAuth;$('#mx').onclick=()=>$('#modal').hidden=true;
+$('#acc').onclick=openAuth;
+const closeModal=()=>$('#modal').hidden=true;
+document.querySelector('#modal .backdrop').onclick=closeModal;
+$('#mhandle').onclick=closeModal;
 $('#logout').onclick=()=>{auth.signOut();$('#modal').hidden=true};
 $('#devbtn').onclick=()=>{$('#modal').hidden=true;go('dev')};
 $('#pav').onclick=()=>$('#avin').click();
@@ -75,8 +78,14 @@ auth.onAuthStateChanged(async u=>{me=u;isDev=false;uname='';
 db.ref('usernames/'+DEV).on('value',s=>{devUid=s.val();sched()});
 db.ref('config/links/discord').on('value',s=>{const a=$('#dc'),v=s.val();a.hidden=!v;if(v)a.href=v});
 db.ref('config/announcement').on('value',s=>{const v=s.val(),a=$('#ann');a.hidden=!v;a.textContent=v||''});
-db.ref('.info/connected').on('value',s=>{if(s.val()){const r=db.ref('presence').push();r.onDisconnect().remove();r.set(TS)}});
-db.ref('presence').on('value',s=>{$('#onl').textContent=s.numChildren();$('#sOn').textContent=s.numChildren()});
+db.ref('.info/connected').on('value',s=>{if(!s.val())return;const r=me?db.ref('presence/'+me.uid):db.ref('presence').push();r.onDisconnect().remove();r.set(me?{name:dn(me.uid,uname),time:TS}:TS)});
+let onlData={};
+db.ref('presence').on('value',s=>{onlData=s.val()||{};const n=s.numChildren();$('#onl').textContent=n;$('#sOn').textContent=n;paintOnl()});
+function paintOnl(){const box=$('#onlpop');if(box.hidden)return;box.textContent='';const names=Object.values(onlData).filter(v=>v&&v.name).map(v=>v.name);
+ if(!names.length)box.append(h('div','',(Object.keys(onlData).length)+' guest(s) online'));
+ names.forEach(n=>box.append(h('div','',n)))}
+$('#onlbtn').onclick=()=>{$('#onlpop').hidden=!$('#onlpop').hidden;paintOnl()};
+document.addEventListener('click',e=>{if(!$('#onlbtn').contains(e.target)&&!$('#onlpop').contains(e.target))$('#onlpop').hidden=true});
 
 /* ---------- typing indicator ---------- */
 function setTyping(on){if(!me)return;const r=db.ref('typing/'+me.uid);if(on){r.onDisconnect().remove();r.set({name:dn(me.uid,uname),time:TS})}else r.remove()}
@@ -89,9 +98,10 @@ db.ref('globalChat').orderByChild('time').limitToLast(100).on('value',s=>{msgs=[
 function media(m,b){if(!m.mid)return;
  if(m.kind==='img'){const im=h('img','mimg');im.onclick=()=>{$('#lb img').src=im.src;$('#lb').hidden=false};im.onload=()=>{if(stuck)$('#msgs').scrollTop=1e9};ld(m.mid,d=>im.src=d);b.append(im)}
  else{const a=h('a','fchip');a.append(fico(),h('span','',(m.fname||'file')+' · '+Math.max(1,Math.ceil((m.fsize||0)/1024))+' KB'));ld(m.mid,d=>{a.href=d;a.download=m.fname||'file'});b.append(a)}}
-function reacts(m,b){const likes=m.likes||{},keys=Object.keys(likes),mine=me&&likes[me.uid];
- const r=h('div','react'+(mine?' on':''));r.innerHTML=svg('heart')+(keys.length?'<b>'+keys.length+'</b>':'');
- r.onclick=()=>{if(!me)return openAuth();db.ref('globalChat/'+m.id+'/likes/'+me.uid).set(mine?null:true)};b.append(r)}
+function reactBtn(m){const likes=m.likes||{},keys=Object.keys(likes),mine=me&&likes[me.uid];
+ const r=h('span','react'+(mine?' on':''));r.innerHTML=svg('heart')+(keys.length?'<b>'+keys.length+'</b>':'');
+ r.onclick=e=>{e.stopPropagation();toggleLike(m)};return r}
+function toggleLike(m){if(!me)return openAuth();const mine=!!(m.likes&&m.likes[me.uid]);db.ref('globalChat/'+m.id+'/likes/'+me.uid).set(mine?null:true)}
 function render(){const box=$('#msgs');stuck=box.scrollHeight-box.scrollTop-box.clientHeight<90;box.textContent='';let pd='',pu=null;
  if(!msgs.length)box.append(h('div','empty','No messages yet. Say hi.'));
  msgs.forEach(m=>{const d=new Date(m.time),k=d.toDateString();if(k!==pd){pd=k;pu=null;box.append(h('div','sep',dl(d)))}
@@ -104,8 +114,8 @@ function render(){const box=$('#msgs');stuck=box.scrollHeight-box.scrollTop-box.
   if(m.replyTo){const q=h('div','quote');q.append(h('b','',m.replyTo.name),h('span','',m.replyTo.text));
    q.onclick=()=>{const tgt=document.querySelector('[data-id="'+m.replyTo.id+'"]');if(!tgt)return toast('Original message is older');tgt.scrollIntoView({block:'center',behavior:'smooth'});tgt.classList.add('flash');setTimeout(()=>tgt.classList.remove('flash'),1400)};b.append(q)}
   media(m,b);if(m.text){const tx=h('div','tx');tx.append(lnk(m.text));b.append(tx)}
-  const mt=h('div','meta');mt.append(h('span','',d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})));if(m.edited)mt.append(h('span','','edited'));b.append(mt);
-  reacts(m,b);
+  const mt=h('div','meta');mt.append(h('span','',d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})));if(m.edited)mt.append(h('span','','edited'));mt.append(reactBtn(m));b.append(mt);
+  b.ondblclick=()=>toggleLike(m);
   const ac=h('div','acts');
   if(m.text)ac.append(ib('copy',()=>copy(m.text)));
   if(me&&!mine)ac.append(ib('reply',()=>{reply={id:m.id,name:dn(m.uid,m.name),text:(m.text||'['+(m.kind==='img'?'photo':'file')+']').slice(0,80)};editing=null;bar('Replying to '+reply.name+': '+reply.text);$('#inp').focus()}));
